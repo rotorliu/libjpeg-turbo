@@ -48,8 +48,9 @@ Build Requirements
   install the Java Developer Package, which can be downloaded from
   <http://developer.apple.com/downloads> (Apple ID required.)  For other
   systems, you can obtain the Oracle Java Development Kit from
-  <http://www.java.com>.
+  <http://www.oracle.com/technetwork/java/javase/downloads>.
 
+  * If using JDK 11 or later, CMake 3.10.x or later must also be used.
 
 ### Windows
 
@@ -83,7 +84,10 @@ Build Requirements
   appropriate compiler paths automatically set.
 
 - If building the TurboJPEG Java wrapper, JDK 1.5 or later is required.  This
-  can be downloaded from <http://www.java.com>.
+  can be downloaded from
+  <http://www.oracle.com/technetwork/java/javase/downloads>.
+
+  * If using JDK 11 or later, CMake 3.10.x or later must also be used.
 
 
 Out-of-Tree Builds
@@ -681,6 +685,8 @@ needs.
 If building for Android 4.0.x (API level < 16) or earlier, remove
 `-DCMAKE_POSITION_INDEPENDENT_CODE=1` from the CMake arguments and `-pie` from
 `LDFLAGS`.
+
+If building on Windows, add `.exe` to the end of `CMAKE_C_COMPILER`.
 
 
 Advanced CMake Options

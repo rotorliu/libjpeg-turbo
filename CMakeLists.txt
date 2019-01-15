@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 2.8.12)
 
+if(CMAKE_EXECUTABLE_SUFFIX)
+  set(CMAKE_EXECUTABLE_SUFFIX_TMP ${CMAKE_EXECUTABLE_SUFFIX})
+endif()
+
 project(libjpeg-turbo C)
-set(VERSION 1.5.91)
+set(VERSION 2.0.2)
 string(REPLACE "." ";" VERSION_TRIPLET ${VERSION})
 list(GET VERSION_TRIPLET 0 VERSION_MAJOR)
 list(GET VERSION_TRIPLET 1 VERSION_MINOR)
@@ -105,8 +109,6 @@ endif()
 
 include(cmakescripts/GNUInstallDirs.cmake)
 
-set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
-
 macro(report_directory var)
   if(CMAKE_INSTALL_${var} STREQUAL CMAKE_INSTALL_FULL_${var})
     message(STATUS "CMAKE_INSTALL_${var} = ${CMAKE_INSTALL_${var}}")
@@ -186,6 +188,10 @@ endif()
 
 report_option(ENABLE_SHARED "Shared libraries")
 report_option(ENABLE_STATIC "Static libraries")
+
+if(ENABLE_SHARED)
+  set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
+endif()
 
 if(WITH_12BIT)
   set(WITH_ARITH_DEC 0)
@@ -464,8 +470,8 @@ if(UNIX AND NOT APPLE)
       # still work.
       file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/conftest.map
         "VERS_1 { global: foo;  local: *; }; VERS_2 { global: foo2; } VERS_1;")
-      set(CMAKE_REQUIRED_FLAGS "-Wl,-M,${CMAKE_CURRENT_BINARY_DIR}/conftest.map")
-      check_c_source_compiles("void foo() {} void foo2() {} int main(void) { return 0; }"
+      set(CMAKE_REQUIRED_FLAGS "-Wl,-M,${CMAKE_CURRENT_BINARY_DIR}/conftest.map -shared")
+      check_c_source_compiles("int foo() { return 0; } int foo2() { return 2; }"
         HAVE_MAPFILE)
       set(CMAKE_REQUIRED_FLAGS)
       file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/conftest.map)
@@ -497,6 +503,11 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 ###############################################################################
 # TARGETS
 ###############################################################################
+
+if(CMAKE_EXECUTABLE_SUFFIX_TMP)
+  set(CMAKE_EXECUTABLE_SUFFIX ${CMAKE_EXECUTABLE_SUFFIX_TMP})
+endif()
+message(STATUS "CMAKE_EXECUTABLE_SUFFIX = ${CMAKE_EXECUTABLE_SUFFIX}")
 
 set(JPEG_SOURCES jcapimin.c jcapistd.c jccoefct.c jccolor.c jcdctmgr.c jchuff.c
   jcicc.c jcinit.c jcmainct.c jcmarker.c jcmaster.c jcomapi.c jcparam.c
@@ -568,7 +579,8 @@ if(WITH_TURBOJPEG)
     if(MINGW)
       set_target_properties(turbojpeg PROPERTIES LINK_FLAGS -Wl,--kill-at)
     endif()
-    if(APPLE)
+    if(APPLE AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR
+                  CMAKE_OSX_DEPLOYMENT_TARGET VERSION_GREATER 10.4))
       if(NOT CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG)
         set(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG "-Wl,-rpath,")
       endif()
@@ -1310,9 +1322,7 @@ endif()
 # INSTALLATION
 ###############################################################################
 
-if(WIN32)
-  set(EXE ".exe")
-endif()
+set(EXE ${CMAKE_EXECUTABLE_SUFFIX})
 
 if(WITH_TURBOJPEG)
   if(ENABLE_SHARED)
@@ -1365,10 +1375,10 @@ if(UNIX OR MINGW)
     ${CMAKE_CURRENT_SOURCE_DIR}/rdjpgcom.1
     ${CMAKE_CURRENT_SOURCE_DIR}/wrjpgcom.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libjpeg.pc
-    ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libturbojpeg.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libjpeg.pc
+  ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libturbojpeg.pc
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jconfig.h
   ${CMAKE_CURRENT_SOURCE_DIR}/jerror.h ${CMAKE_CURRENT_SOURCE_DIR}/jmorecfg.h
